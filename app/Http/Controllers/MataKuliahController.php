@@ -2,27 +2,76 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\View\View;
+use App\Models\Matakuliah;
+use Illuminate\Http\Request;
+use Yajra\DataTables\Facades\DataTables;
 
 class MataKuliahController extends Controller
 {
-    public function index(): View
+    public function index()
     {
-        $kolom = [
-            'kode' => 'Kode',
-            'nama' => 'Mata Kuliah',
-            'sks' => 'SKS',
-            'semester' => 'Semester',
-            'jenis' => 'Jenis',
-        ];
+        return view('matakuliah.index');
+    }
 
-        $matakuliah = [
-            ['kode' => 'TIF201', 'nama' => 'Pemrograman Web', 'sks' => 3, 'semester' => 3, 'jenis' => 'Praktik'],
-            ['kode' => 'TIF202', 'nama' => 'Basis Data', 'sks' => 3, 'semester' => 2, 'jenis' => 'Praktik'],
-            ['kode' => 'TIF301', 'nama' => 'Rekayasa Perangkat Lunak', 'sks' => 3, 'semester' => 4, 'jenis' => 'Teori'],
-            ['kode' => 'TIF203', 'nama' => 'Jaringan Komputer', 'sks' => 2, 'semester' => 3, 'jenis' => 'Teori'],
-        ];
+    public function data()
+    {
+       
+        $matakuliah = Matakuliah::select(['id', 'kode_mk', 'nama_mk', 'sks']);
 
-        return view('matakuliah.index', compact('kolom', 'matakuliah'));
+        return DataTables::of($matakuliah)
+            ->addIndexColumn()
+            ->addColumn('aksi', function ($row) {
+                return view('matakuliah._aksi', compact('row'))->render();
+            })
+            ->rawColumns(['aksi'])
+            ->make(true);
+    }
+
+    public function create()
+    {
+        return view('matakuliah.create');
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'kode_mk' => 'required|string|max:20|unique:mata_kuliah,kode_mk',
+            'nama_mk' => 'required|string|max:100',
+            'sks' => 'required|integer|min:1|max:6',
+        ]);
+
+        Matakuliah::create($validated);
+
+        return redirect()->route('matakuliah.index')->with('success', 'Mata kuliah berhasil ditambahkan.');
+    }
+
+    public function show(Matakuliah $matakuliah)
+    {
+        return view('matakuliah.show', compact('matakuliah'));
+    }
+
+    public function edit(Matakuliah $matakuliah)
+    {
+        return view('matakuliah.edit', compact('matakuliah'));
+    }
+
+    public function update(Request $request, Matakuliah $matakuliah)
+    {
+        $validated = $request->validate([
+            'kode_mk' => 'required|string|max:20|unique:mata_kuliah,kode_mk,' . $matakuliah->id,
+            'nama_mk' => 'required|string|max:100',
+            'sks' => 'required|integer|min:1|max:6',
+        ]);
+
+        $matakuliah->update($validated);
+
+        return redirect()->route('matakuliah.index')->with('success', 'Mata kuliah berhasil diperbarui.');
+    }
+
+    public function destroy(Matakuliah $matakuliah)
+    {
+        $matakuliah->delete();
+
+        return response()->json(['message' => 'Mata kuliah berhasil dihapus.']);
     }
 }

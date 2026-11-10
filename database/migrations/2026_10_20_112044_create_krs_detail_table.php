@@ -10,26 +10,11 @@ return new class extends Migration
      * Run the migrations.
      */
     public function up(): void
-    {
-        Schema::create('krs_detail', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('krs_id')
-                ->constrained('krs')
-                ->cascadeOnDelete();
-            $table->foreignId('mata_kuliah_id')
-                ->constrained('mata_kuliah')
-                ->restrictOnDelete();
-            $table->timestamps();
-
-            $table->unique(['krs_id', 'mata_kuliah_id']);
-        });
-    }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::dropIfExists('krs_detail');
-    }
-};
+{
+    Schema::create('krs_details', function (Blueprint $table) {
+        $table->id();
+        $table->foreignId('krs_id')->constrained('krs')->onDelete('cascade');
+        $table->foreignId('matakuliah_id')->constrained('matakuliahs')->onDelete('cascade');
+        $table->timestamps();
+    });
+}

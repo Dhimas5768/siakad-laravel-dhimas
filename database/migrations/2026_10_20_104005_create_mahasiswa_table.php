@@ -4,30 +4,22 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
-    /**
-     * Run the migrations.
-     */
+return new class extends Migration {
     public function up(): void
     {
-        Schema::create('mahasiswa', function (Blueprint $table) {
+        Schema::create('mahasiswas', function (Blueprint $table) {
             $table->id();
-            $table->string('nim', 15)->unique();
-            $table->string('nama', 100);
-            $table->enum('jenis_kelamin', ['L', 'P']);
-            $table->string('email', 100)->unique();
-            $table->unsignedSmallInteger('angkatan');
-            $table->string('program_studi', 100)->default('D3 Teknik Informatika');
+            $table->string('nim', 20)->unique();
+            $table->string('nama', 120);
+            $table->string('email', 120)->unique();
+            $table->string('telepon', 20)->nullable();
+            $table->text('alamat')->nullable();
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::dropIfExists('mahasiswa');
+        Schema::dropIfExists('mahasiswas');
     }
 };

@@ -3,20 +3,17 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class KrsDetail extends Model
 {
     protected $table = 'krs_detail';
-
-    protected $fillable = ['krs_id', 'mata_kuliah_id'];
-
-    public function krs(): BelongsTo
+    protected $fillable = ['krs_id', 'mata_kuliah_id']; 
+    public function krs()
     {
         return $this->belongsTo(Krs::class, 'krs_id');
     }
 
-    public function mataKuliah(): BelongsTo
+    public function matakuliah()
     {
         return $this->belongsTo(MataKuliah::class, 'mata_kuliah_id');
     }

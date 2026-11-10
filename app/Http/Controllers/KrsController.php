@@ -2,27 +2,73 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\View\View;
-
+use App\Models\Krs;
+use App\Models\Mahasiswa;
+use App\Models\MataKuliah;
+use Illuminate\Http\Request;
+use Yajra\DataTables\Facades\DataTables;
+use Barryvdh\DomPDF\Facade\Pdf; 
 class KrsController extends Controller
 {
-    public function index(): View
+    public function index()
     {
-        $kolom = [
-            'nim' => 'NIM',
-            'nama' => 'Nama Mahasiswa',
-            'semester' => 'Semester',
-            'sks' => 'Total SKS',
-            'status' => 'Status',
-        ];
+        return view('krs.index');
+    }
 
-        $krs = [
-            ['nim' => '2401001', 'nama' => 'Ahmad Fauzi', 'semester' => 2, 'sks' => 22, 'status' => 'Disetujui'],
-            ['nim' => '2401002', 'nama' => 'Siti Rahmawati', 'semester' => 2, 'sks' => 20, 'status' => 'Disetujui'],
-            ['nim' => '2301005', 'nama' => 'Budi Santoso', 'semester' => 4, 'sks' => 24, 'status' => 'Menunggu'],
-            ['nim' => '2301012', 'nama' => 'Dewi Lestari', 'semester' => 4, 'sks' => 18, 'status' => 'Menunggu'],
-        ];
+    public function data()
+    {
+        $query = Krs::with('mahasiswa');
+        return DataTables::of($query)
+            ->addIndexColumn()
+            ->addColumn('nim', fn($row) => $row->mahasiswa->nim ?? '-')
+            ->addColumn('nama_mahasiswa', fn($row) => $row->mahasiswa->nama ?? '-')
+            ->addColumn('aksi', fn($row) => view('krs._aksi', compact('row'))->render())
+            ->rawColumns(['aksi'])
+            ->toJson();
+    }
 
-        return view('krs.index', compact('kolom', 'krs'));
+    public function create()
+    {
+        $mahasiswas = Mahasiswa::orderBy('nama')->get();
+        $matakuliahs = MataKuliah::orderBy('nama_mk')->get();
+        return view('krs.create', compact('mahasiswas', 'matakuliahs'));
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'mahasiswa_id' => 'required|exists:mahasiswa,id',
+            'semester' => 'required|string',
+            'matakuliah_ids' => 'required|array|min:1',
+            'matakuliah_ids.*' => 'exists:mata_kuliah,id',
+        ]);
+
+        $krs = Krs::firstOrCreate([
+            'mahasiswa_id' => $request->mahasiswa_id,
+            'semester' => $request->semester,
+            'tahun_akademik' => '2025/2026',
+        ]);
+
+        foreach ($request->matakuliah_ids as $mkId) {
+            $krs->details()->firstOrCreate(['mata_kuliah_id' => $mkId]);
+        }
+
+        return redirect()->route('krs.index')->with('success', 'KRS berhasil disimpan.');
+    }
+
+    public function destroy($id)
+    {
+        $krs = Krs::findOrFail($id);
+        $krs->delete();
+        
+        return redirect()->route('krs.index')->with('success', 'Data KRS berhasil dihapus.');
+    }
+
+    public function cetakPdf(Krs $krs)
+    {
+        $krs->load('mahasiswa', 'details.matakuliah');
+        
+        $pdf = Pdf::loadView('krs.pdf', compact('krs')); 
+        return $pdf->download('KRS-' . ($krs->mahasiswa->nim ?? 'mahasiswa') . '.pdf');
     }
 }

@@ -2,43 +2,60 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Models\Mahasiswa;
+use App\Http\Requests\MahasiswaRequest;
+use Yajra\DataTables\Facades\DataTables;
 
 class MahasiswaController extends Controller
 {
-    // Data dummy mahasiswa
-    protected $mahasiswa = [
-        ['nim' => '2401001', 'nama' => 'Ahmad Fauzi',   'prodi' => 'Teknik Informatika', 'angkatan' => '2024', 'status' => 'Aktif'],
-        ['nim' => '2401002', 'nama' => 'Siti Rahmawati', 'prodi' => 'Teknik Informatika', 'angkatan' => '2024', 'status' => 'Aktif'],
-        ['nim' => '2301005', 'nama' => 'Budi Santoso',   'prodi' => 'Teknik Informatika', 'angkatan' => '2023', 'status' => 'Aktif'],
-        ['nim' => '2301012', 'nama' => 'Dewi Lestari',   'prodi' => 'Teknik Informatika', 'angkatan' => '2023', 'status' => 'Aktif'],
-        ['nim' => '2201020', 'nama' => 'Rizky Pratama',  'prodi' => 'Teknik Informatika', 'angkatan' => '2202', 'status' => 'Aktif'],
-    ];
-
     public function index()
     {
-        $kolom = [
-            'nim'    => 'NIM',
-            'nama'   => 'Nama Mahasiswa',
-            'prodi'  => 'Program Studi',
-            'status' => 'Status'
-        ];
-
-        $mahasiswa = $this->mahasiswa;
-
-        return view('mahasiswa.index', compact('kolom', 'mahasiswa'));
+        return view('mahasiswa.index');
     }
 
-    public function show($nim)
+    public function data()
     {
-        // Cari data mahasiswa berdasarkan NIM
-        $mhs = collect($this->mahasiswa)->firstWhere('nim', $nim);
+        $query = Mahasiswa::query();
+        return DataTables::of($query)
+            ->addIndexColumn()
+            ->addColumn('aksi', function ($row) {
+                return view('mahasiswa._aksi', compact('row'))->render();
+            })
+            ->rawColumns(['aksi'])
+            ->toJson();
+    }
 
-        // Jika NIM tidak ditemukan, tampilkan error 404
-        if (!$mhs) {
-            abort(404);
-        }
+    public function create()
+    {
+        $mahasiswa = new Mahasiswa();
+        return view('mahasiswa.create', compact('mahasiswa'));
+    }
 
-        return view('mahasiswa.show', compact('mhs'));
+    public function store(MahasiswaRequest $request)
+    {
+        Mahasiswa::create($request->validated());
+        return redirect()->route('mahasiswa.index')->with('success', 'Data mahasiswa berhasil ditambahkan.');
+    }
+
+    public function show(Mahasiswa $mahasiswa)
+    {
+        return view('mahasiswa.show', compact('mahasiswa'));
+    }
+
+    public function edit(Mahasiswa $mahasiswa)
+    {
+        return view('mahasiswa.edit', compact('mahasiswa'));
+    }
+
+    public function update(MahasiswaRequest $request, Mahasiswa $mahasiswa)
+    {
+        $mahasiswa->update($request->validated());
+        return redirect()->route('mahasiswa.index')->with('success', 'Data mahasiswa berhasil diperbarui.');
+    }
+
+    public function destroy(Mahasiswa $mahasiswa)
+    {
+        $mahasiswa->delete();
+        return response()->json(['message' => 'Data mahasiswa berhasil dihapus.']);
     }
 }
